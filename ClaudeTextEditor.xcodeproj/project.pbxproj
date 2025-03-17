@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		7B9FAF7C2D87F7A900CC4167 /* SwiftAnthropic in Frameworks */ = {isa = PBXBuildFile; productRef = 7B9FAF7B2D87F7A900CC4167 /* SwiftAnthropic */; };
+		7BDBA6612D88E10F00D4D7D6 /* MCPSwiftWrapper in Frameworks */ = {isa = PBXBuildFile; productRef = 7BDBA6602D88E10F00D4D7D6 /* MCPSwiftWrapper */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -57,6 +58,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				7B9FAF7C2D87F7A900CC4167 /* SwiftAnthropic in Frameworks */,
+				7BDBA6612D88E10F00D4D7D6 /* MCPSwiftWrapper in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -118,6 +120,8 @@
 			name = ClaudeTextEditor;
 			packageProductDependencies = (
 				7B9FAF7B2D87F7A900CC4167 /* SwiftAnthropic */,
+				7BDBA6412D88DC1400D4D7D6 /* MCPSwiftWrapper */,
+				7BDBA6602D88E10F00D4D7D6 /* MCPSwiftWrapper */,
 			);
 			productName = ClaudeTextEditor;
 			productReference = 7B9FAF402D87F72E00CC4167 /* ClaudeTextEditor.app */;
@@ -203,6 +207,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				7B9FAF7A2D87F7A900CC4167 /* XCRemoteSwiftPackageReference "SwiftAnthropic" */,
+				7BDBA65F2D88E10F00D4D7D6 /* XCRemoteSwiftPackageReference "MCPSwiftWrapper" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 7B9FAF412D87F72E00CC4167 /* Products */;
@@ -568,6 +573,14 @@
 				kind = branch;
 			};
 		};
+		7BDBA65F2D88E10F00D4D7D6 /* XCRemoteSwiftPackageReference "MCPSwiftWrapper" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/jamesrochabrun/MCPSwiftWrapper";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -575,6 +588,15 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 7B9FAF7A2D87F7A900CC4167 /* XCRemoteSwiftPackageReference "SwiftAnthropic" */;
 			productName = SwiftAnthropic;
+		};
+		7BDBA6412D88DC1400D4D7D6 /* MCPSwiftWrapper */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MCPSwiftWrapper;
+		};
+		7BDBA6602D88E10F00D4D7D6 /* MCPSwiftWrapper */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7BDBA65F2D88E10F00D4D7D6 /* XCRemoteSwiftPackageReference "MCPSwiftWrapper" */;
+			productName = MCPSwiftWrapper;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

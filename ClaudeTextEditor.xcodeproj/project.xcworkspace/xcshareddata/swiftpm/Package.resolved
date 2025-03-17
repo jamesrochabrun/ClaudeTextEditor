@@ -1,6 +1,51 @@
 {
-  "originHash" : "78fdc9a7c0d29a98c94c2a960fff727341fa09cc0290a7c76ac94467297295c9",
+  "originHash" : "55e131de360e925adbf64fb425a674d0555383066be8b6b14cff485aec14fb67",
   "pins" : [
+    {
+      "identity" : "jsonrpc",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/gsabran/JSONRPC",
+      "state" : {
+        "revision" : "56c936de4e4385287dc18f260557dbdf443a55bd",
+        "version" : "0.9.1"
+      }
+    },
+    {
+      "identity" : "mcp-swift-sdk",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/gsabran/mcp-swift-sdk",
+      "state" : {
+        "revision" : "5399cccd2c5b481e641cbb3ccdba12bf5bd1d2d5",
+        "version" : "0.2.3"
+      }
+    },
+    {
+      "identity" : "mcpswiftwrapper",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/jamesrochabrun/MCPSwiftWrapper",
+      "state" : {
+        "branch" : "main",
+        "revision" : "55c7f07a3e6730442e3349c9b6fd61093fba2d12"
+      }
+    },
+    {
+      "identity" : "swift-json-schema",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ajevans99/swift-json-schema",
+      "state" : {
+        "revision" : "707fc4c2d53138e8fbb4ee9e6669b050ba4b2239",
+        "version" : "0.3.2"
+      }
+    },
+    {
+      "identity" : "swift-syntax",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/swiftlang/swift-syntax",
+      "state" : {
+        "revision" : "0687f71944021d616d34d922343dcef086855920",
+        "version" : "600.0.1"
+      }
+    },
     {
       "identity" : "swiftanthropic",
       "kind" : "remoteSourceControl",
@@ -8,6 +53,15 @@
       "state" : {
         "branch" : "main",
         "revision" : "c921b625dcbcc0653343ae63c89d1cbfed0bd539"
+      }
+    },
+    {
+      "identity" : "swiftopenai",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/jamesrochabrun/SwiftOpenAI",
+      "state" : {
+        "revision" : "3f5e195781e39ebbfec512118a1e43ec65fe4367",
+        "version" : "4.0.6"
       }
     }
   ],
