@@ -1,26 +1,22 @@
 //
-//  ContentView.swift
+//  ChatScreen.swift
 //  ClaudeTextEditor
 //
 //  Created by James Rochabrun on 3/16/25.
 //
 
-import SwiftUI
-
-import SwiftUI
 import SwiftAnthropic
+import SwiftUI
 
-struct ContentView: View {
+struct ChatScreen: View {
    
+   init(viewModel: ChatConversationViewModel) {
+      self.viewModel = viewModel
+   }
+   
+   private let viewModel: ChatConversationViewModel
    @State private var userInput: String = ""
-   @State private var viewModel = ChatConversationViewModel(
-      service: {
-         AnthropicServiceFactory.service(
-            apiKey: "",
-            betaHeaders: nil,
-            debugEnabled: true)
-      }()
-   )
+   
    var body: some View {
       VStack(spacing: 0) {
          // Chat message list
@@ -116,6 +112,3 @@ struct ContentView: View {
    }
 }
 
-#Preview {
-   ContentView()
-}

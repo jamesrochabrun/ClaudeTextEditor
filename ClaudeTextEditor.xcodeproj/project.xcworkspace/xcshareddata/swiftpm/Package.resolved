@@ -1,5 +1,5 @@
 {
-  "originHash" : "55e131de360e925adbf64fb425a674d0555383066be8b6b14cff485aec14fb67",
+  "originHash" : "32aa85feed3dfab46826887c936087d5ecaf5efe1fee495f4f9b6939660f1e2f",
   "pins" : [
     {
       "identity" : "jsonrpc",
@@ -25,7 +25,7 @@
       "location" : "https://github.com/jamesrochabrun/MCPSwiftWrapper",
       "state" : {
         "branch" : "main",
-        "revision" : "55c7f07a3e6730442e3349c9b6fd61093fba2d12"
+        "revision" : "79bab1a5687b9d412f625c796ad560cc2a04c4b6"
       }
     },
     {

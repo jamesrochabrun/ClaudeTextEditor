@@ -5,8 +5,9 @@
 //  Created by James Rochabrun on 3/16/25.
 //
 
-import SwiftUI
+import MCPClient
 import SwiftAnthropic
+import SwiftUI
 
 @MainActor
 @Observable
@@ -34,6 +35,8 @@ class ChatConversationViewModel {
    /// The AnthropicService we use for calling the API
    private let service: AnthropicService
    
+   private var mcpClient: MCPClient?
+
    /// Handler for text editor commands from Claude
    private let textEditorHandler: TextEditorCommandHandler
    
@@ -55,6 +58,10 @@ class ChatConversationViewModel {
    }
    
    // MARK: Public Methods
+   
+   func updateClient(_ client: MCPClient) {
+     mcpClient = client
+   }
    
    /// Start a new conversation with user text
    func sendUserMessage(_ userText: String) {

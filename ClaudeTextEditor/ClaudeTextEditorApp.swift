@@ -5,42 +5,39 @@
 //  Created by James Rochabrun on 3/16/25.
 //
 
-import SwiftUI
 import MCPSwiftWrapper
+import SwiftUI
 
 @main
 struct ClaudeTextEditorApp: App {
    
+   @State private var viewModel = ChatConversationViewModel(
+      service: {
+         AnthropicServiceFactory.service(
+            apiKey: "",
+            betaHeaders: nil,
+            debugEnabled: true)
+      }()
+   )
    
-   init() {
-     let service = AnthropicServiceFactory.service(apiKey: "", betaHeaders: nil, debugEnabled: true)
-
-     // Uncomment this and comment the above for OpenAI Demo
-
-     //      let openAIService = OpenAIServiceFactory.service(apiKey: "", debugEnabled: true)
-     //
-     //      let openAIChatNonStreamManager = OpenAIChatNonStreamManager(service: openAIService)
-     //
-     //      _chatManager = State(initialValue: openAIChatNonStreamManager)
-   }
-
    private let claudeMCPclient = ClaudeCodeMCP()
    
    var body: some Scene {
       WindowGroup {
-         ContentView()
+         ChatScreen(viewModel: viewModel)
+            .toolbar(removing: .title)
+            .containerBackground(
+               .thinMaterial, for: .window)
+            .toolbarBackgroundVisibility(
+               .hidden, for: .windowToolbar)
             .frame(minWidth: 800, minHeight: 600)
-            .onAppear {
-               // Optional appearance customization for macOS app
-               if let windowScene = NSApplication.shared.windows.first {
-                  windowScene.title = "Claude Text Editor"
-                  Task {
-                     await print(try! claudeMCPclient.getClientAsync()?.anthropicTools())
-                  }
+            .task {
+               if let client = try? await claudeMCPclient.getClientAsync() {
+                  viewModel.updateClient(client)
                }
             }
       }
-      .windowStyle(.titleBar)
+      .windowStyle(.hiddenTitleBar)
       .windowToolbarStyle(.unified)
    }
 }
