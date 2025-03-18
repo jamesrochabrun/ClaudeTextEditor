@@ -10,7 +10,9 @@ import MCPSwiftWrapper
 
 final class ClaudeCodeMCP {
    
-   init() {
+   /// Initialize with a specific root directory
+   /// - Parameter rootDirectory: The directory to use as the current working directory for Claude Code
+   init(rootDirectory: String?) {
       Task {
          do {
             self.client = try await MCPClient(
@@ -18,8 +20,10 @@ final class ClaudeCodeMCP {
                transport: .stdioProcess(
                   "claude",
                   args: ["mcp", "serve"],
+                  cwd: rootDirectory,  // Set the current working directory for Claude Code
                   verbose: true),
                capabilities: .init())
+            
             clientInitialized.continuation.yield(self.client)
             clientInitialized.continuation.finish()
          } catch {
@@ -31,6 +35,7 @@ final class ClaudeCodeMCP {
    }
    
    /// Get the initialized client using Swift async/await
+   /// - Returns: The initialized MCPClient if successful, nil otherwise
    func getClientAsync() async throws -> MCPClient? {
       for await client in clientInitialized.stream {
          return client
@@ -38,6 +43,9 @@ final class ClaudeCodeMCP {
       return nil // Stream completed without a client
    }
    
+   /// The MCP client instance
    private var client: MCPClient?
+   
+   /// Stream to handle async initialization
    private let clientInitialized = AsyncStream.makeStream(of: MCPClient?.self)
 }
