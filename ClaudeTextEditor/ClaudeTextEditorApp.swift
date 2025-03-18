@@ -14,7 +14,7 @@ struct ClaudeTextEditorApp: App {
    @State private var viewModel = ChatConversationMCPViewModel(
       service: {
          AnthropicServiceFactory.service(
-            apiKey: "YOUR_API_KEY",
+            apiKey: "",
             betaHeaders: nil,
             debugEnabled: true)
       }()
@@ -30,7 +30,6 @@ struct ClaudeTextEditorApp: App {
                .thinMaterial, for: .window)
             .toolbarBackgroundVisibility(
                .hidden, for: .windowToolbar)
-            .frame(minWidth: 800, minHeight: 600)
             .task {
                if let client = try? await claudeMCPclient.getClientAsync() {
                   viewModel.updateClient(client)

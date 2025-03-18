@@ -9,6 +9,7 @@ import Foundation
 
 /// A very naive "file manager" that just stores file contents in memory.
 /// In a real app, you'd read/write from the actual filesystem or user-chosen files.
+/// To be used for `ChatConversationViewModel` only
 final class TextEditorFileManager {
    /// Mock files with synthetic errors
    private var files: [String: String] = [
