@@ -10,6 +10,8 @@
 		7B9FAF7C2D87F7A900CC4167 /* SwiftAnthropic in Frameworks */ = {isa = PBXBuildFile; productRef = 7B9FAF7B2D87F7A900CC4167 /* SwiftAnthropic */; };
 		7BDBA6612D88E10F00D4D7D6 /* MCPSwiftWrapper in Frameworks */ = {isa = PBXBuildFile; productRef = 7BDBA6602D88E10F00D4D7D6 /* MCPSwiftWrapper */; };
 		7BDBA6D12D88FA3B00D4D7D6 /* MCPSwiftWrapper in Frameworks */ = {isa = PBXBuildFile; productRef = 7BDBA6412D88DC1400D4D7D6 /* MCPSwiftWrapper */; };
+		7BDBA6F72D893EA400D4D7D6 /* MarkdownUI in Frameworks */ = {isa = PBXBuildFile; productRef = 7BDBA6F62D893EA400D4D7D6 /* MarkdownUI */; };
+		7BDBA6FA2D893EC100D4D7D6 /* Splash in Frameworks */ = {isa = PBXBuildFile; productRef = 7BDBA6F92D893EC100D4D7D6 /* Splash */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -58,9 +60,11 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7BDBA6FA2D893EC100D4D7D6 /* Splash in Frameworks */,
 				7BDBA6D12D88FA3B00D4D7D6 /* MCPSwiftWrapper in Frameworks */,
 				7B9FAF7C2D87F7A900CC4167 /* SwiftAnthropic in Frameworks */,
 				7BDBA6612D88E10F00D4D7D6 /* MCPSwiftWrapper in Frameworks */,
+				7BDBA6F72D893EA400D4D7D6 /* MarkdownUI in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -124,6 +128,8 @@
 				7B9FAF7B2D87F7A900CC4167 /* SwiftAnthropic */,
 				7BDBA6412D88DC1400D4D7D6 /* MCPSwiftWrapper */,
 				7BDBA6602D88E10F00D4D7D6 /* MCPSwiftWrapper */,
+				7BDBA6F62D893EA400D4D7D6 /* MarkdownUI */,
+				7BDBA6F92D893EC100D4D7D6 /* Splash */,
 			);
 			productName = ClaudeTextEditor;
 			productReference = 7B9FAF402D87F72E00CC4167 /* ClaudeTextEditor.app */;
@@ -210,6 +216,8 @@
 			packageReferences = (
 				7B9FAF7A2D87F7A900CC4167 /* XCRemoteSwiftPackageReference "SwiftAnthropic" */,
 				7BDBA65F2D88E10F00D4D7D6 /* XCRemoteSwiftPackageReference "MCPSwiftWrapper" */,
+				7BDBA6F52D893EA400D4D7D6 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */,
+				7BDBA6F82D893EC100D4D7D6 /* XCRemoteSwiftPackageReference "Splash" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 7B9FAF412D87F72E00CC4167 /* Products */;
@@ -583,6 +591,22 @@
 				kind = branch;
 			};
 		};
+		7BDBA6F52D893EA400D4D7D6 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/gonzalezreal/swift-markdown-ui";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.4.1;
+			};
+		};
+		7BDBA6F82D893EC100D4D7D6 /* XCRemoteSwiftPackageReference "Splash" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/JohnSundell/Splash";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.16.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -599,6 +623,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 7BDBA65F2D88E10F00D4D7D6 /* XCRemoteSwiftPackageReference "MCPSwiftWrapper" */;
 			productName = MCPSwiftWrapper;
+		};
+		7BDBA6F62D893EA400D4D7D6 /* MarkdownUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7BDBA6F52D893EA400D4D7D6 /* XCRemoteSwiftPackageReference "swift-markdown-ui" */;
+			productName = MarkdownUI;
+		};
+		7BDBA6F92D893EC100D4D7D6 /* Splash */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 7BDBA6F82D893EC100D4D7D6 /* XCRemoteSwiftPackageReference "Splash" */;
+			productName = Splash;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

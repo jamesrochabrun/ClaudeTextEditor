@@ -9,6 +9,7 @@ import Foundation
 import MCPSwiftWrapper
 
 final class ClaudeCodeMCP {
+   
    init() {
       Task {
          do {
@@ -40,4 +41,3 @@ final class ClaudeCodeMCP {
    private var client: MCPClient?
    private let clientInitialized = AsyncStream.makeStream(of: MCPClient?.self)
 }
-
