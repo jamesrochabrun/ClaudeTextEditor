@@ -12,7 +12,6 @@ struct SettingsView: View {
    @Environment(\.dismiss) private var dismiss
    @Environment(\.settingsManager) var settingsManager
    
-   
    @State private var apiKey: String = ""
    @State private var showApiKey: Bool = false
    @State private var directoryPath: String = ""
@@ -21,6 +20,10 @@ struct SettingsView: View {
       VStack(alignment: .leading, spacing: 20) {
          Text("Claude Text Editor Settings")
             .font(.title)
+            .padding(.bottom, 10)
+         
+         Text("⚠️ You MUST restart the app for these changes to be applied!")
+            .font(.subheadline)
             .padding(.bottom, 10)
          
          // API Key Section
