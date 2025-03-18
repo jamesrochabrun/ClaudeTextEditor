@@ -80,13 +80,13 @@ struct ChatScreen: View {
                .textFieldStyle(.roundedBorder)
                .lineLimit(1...5)
                .disabled(viewModel.waitingForToolResultApproval)
+               .onKeyPress(.return) {
+                  sendUserMessage()
+                  return .handled
+               }
             
             Button(action: {
-               let trimmedInput = userInput.trimmingCharacters(in: .whitespacesAndNewlines)
-               guard !trimmedInput.isEmpty else { return }
-               
-               viewModel.sendUserMessage(trimmedInput)
-               userInput = ""
+               sendUserMessage()
             }) {
                Image(systemName: "paperplane.fill")
                   .foregroundColor(.accentColor)
@@ -109,6 +109,14 @@ struct ChatScreen: View {
          }
       }
       .frame(minWidth: 700, minHeight: 500)
+   }
+   
+   private func sendUserMessage() {
+      let trimmedInput = userInput.trimmingCharacters(in: .whitespacesAndNewlines)
+      guard !trimmedInput.isEmpty else { return }
+      
+      viewModel.sendUserMessage(trimmedInput)
+      userInput = ""
    }
 }
 
