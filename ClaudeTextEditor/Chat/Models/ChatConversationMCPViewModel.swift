@@ -1,8 +1,8 @@
 //
-//  ChatConversationViewModel.swift
+//  ChatConversationMCPViewModel.swift
 //  ClaudeTextEditor
 //
-//  Created by James Rochabrun on 3/16/25.
+//  Created by James Rochabrun on 3/17/25.
 //
 
 import MCPClient
@@ -11,7 +11,8 @@ import SwiftUI
 
 @MainActor
 @Observable
-class ChatConversationViewModel {
+/// A Chat observable object that works with any MCP server
+class ChatConversationMCPViewModel {
    
    // MARK: Public Properties
    
@@ -36,18 +37,12 @@ class ChatConversationViewModel {
    private let service: AnthropicService
    
    private var mcpClient: MCPClient?
-
+   
    /// Handler for text editor commands from Claude
    private let textEditorHandler: TextEditorCommandHandler
    
    /// For any in-progress tool_use block, we store partial JSON here
    private var toolUseAccumulators: [Int: ToolUseAccumulator] = [:]
-   
-   /// The text editor tool definition
-   private let textEditorTool: MessageParameter.Tool = .hosted(
-      type: "text_editor_20250124",
-      name: "str_replace_editor"
-   )
    
    // MARK: Initialization
    
@@ -60,7 +55,7 @@ class ChatConversationViewModel {
    // MARK: Public Methods
    
    func updateClient(_ client: MCPClient) {
-     mcpClient = client
+      mcpClient = client
    }
    
    /// Start a new conversation with user text
@@ -123,18 +118,25 @@ class ChatConversationViewModel {
    
    /// Call Claude's streaming API with our full conversation
    private func callClaude() {
-      // 1) Build parameter with entire chat + text editor tool
-      let paramMessages = conversationToParameterMessages()
-      let param = MessageParameter(
-         model: .claude37Sonnet,
-         messages: paramMessages,
-         maxTokens: 4000,
-         stream: true,
-         tools: [textEditorTool]
-      )
       
-      // 2) Start streaming
       Task {
+         
+         // 1) Build parameter with entire chat + tools from MCPClient
+         let paramMessages = conversationToParameterMessages()
+         
+         // Get tools from MCPClient, fall back to empty array if not available
+         let tools = try await mcpClient?.anthropicTools() ?? []
+         
+         let param = MessageParameter(
+            model: .claude37Sonnet,
+            messages: paramMessages,
+            maxTokens: 4000,
+            stream: true,
+            tools: tools
+         )
+         
+         // 2) Start streaming
+         
          do {
             isStreaming = true
             errorMessage = ""
@@ -251,21 +253,113 @@ class ChatConversationViewModel {
       let toolUseMsg = ChatMessage(role: .toolUse, content: debugInfo)
       messages.append(toolUseMsg)
       
-      // 2) Actually process the tool use command (view file, str_replace, etc.)
-      let (resultText, isError) = textEditorHandler.processToolUse(input: inputDict)
+      // 2) Call the tool via MCPClient
+      Task {
+         if let mcpClient = mcpClient {
+            // Convert our dictionary to the format expected by MCPClient
+            let toolResponse = await mcpClient.anthropicCallTool(
+               name: toolName,
+               input: convertToMCPInput(inputDict),
+               debug: true
+            )
+            
+            // 3) Add a tool result message in the UI
+            let resultText = toolResponse ?? "Tool execution failed"
+            let isError = toolResponse == nil
+            let resultMsg = ChatMessage(role: .toolResult, content: resultText)
+            messages.append(resultMsg)
+            
+            // 4) Store this pending tool result and wait for user approval
+            pendingToolUse = PendingToolUse(
+               toolUseId: toolUseId,
+               toolName: toolName,
+               resultText: resultText,
+               isError: isError
+            )
+            waitingForToolResultApproval = true
+         } else {
+            // Fallback to the old method if MCPClient is not available
+            let (resultText, isError) = textEditorHandler.processToolUse(input: inputDict)
+            
+            let resultMsg = ChatMessage(role: .toolResult, content: resultText)
+            messages.append(resultMsg)
+            
+            pendingToolUse = PendingToolUse(
+               toolUseId: toolUseId,
+               toolName: toolName,
+               resultText: resultText,
+               isError: isError
+            )
+            waitingForToolResultApproval = true
+         }
+      }
+   }
+   
+   // Helper to convert our dictionary format to what MCPClient expects
+   private func convertToMCPInput(_ dict: [String: MessageResponse.Content.DynamicContent]) -> [String: Any] {
+      var result: [String: Any] = [:]
       
-      // 3) Add a tool result message in the UI
-      let resultMsg = ChatMessage(role: .toolResult, content: resultText)
-      messages.append(resultMsg)
+      for (key, value) in dict {
+         switch value {
+         case .string(let string):
+            result[key] = string
+         case .integer(let int):
+            result[key] = int
+         case .double(let double):
+            result[key] = double
+         case .bool(let bool):
+            result[key] = bool
+         case .null:
+            result[key] = NSNull()
+         case .array(let array):
+            result[key] = convertDynamicArray(array)
+         case .dictionary(let dict):
+            result[key] = convertDynamicDict(dict)
+         }
+      }
       
-      // 4) Store this pending tool result and wait for user approval
-      pendingToolUse = PendingToolUse(
-         toolUseId: toolUseId,
-         toolName: toolName,
-         resultText: resultText,
-         isError: isError
-      )
-      waitingForToolResultApproval = true
+      return result
+   }
+   
+   // Helper for arrays
+   private func convertDynamicArray(_ array: [MessageResponse.Content.DynamicContent]) -> [Any] {
+      array.map { content in
+         switch content {
+         case .string(let string): return string
+         case .integer(let int): return int
+         case .double(let double): return double
+         case .bool(let bool): return bool
+         case .null: return NSNull()
+         case .array(let array): return convertDynamicArray(array)
+         case .dictionary(let dict): return convertDynamicDict(dict)
+         }
+      }
+   }
+   
+   // Helper for dictionaries
+   private func convertDynamicDict(_ dict: [String: MessageResponse.Content.DynamicContent]) -> [String: Any] {
+      var result: [String: Any] = [:]
+      
+      for (key, value) in dict {
+         switch value {
+         case .string(let string):
+            result[key] = string
+         case .integer(let int):
+            result[key] = int
+         case .double(let double):
+            result[key] = double
+         case .bool(let bool):
+            result[key] = bool
+         case .null:
+            result[key] = NSNull()
+         case .array(let array):
+            result[key] = convertDynamicArray(array)
+         case .dictionary(let dict):
+            result[key] = convertDynamicDict(dict)
+         }
+      }
+      
+      return result
    }
    
    /// Pretty-format a tool input for display
@@ -412,29 +506,4 @@ class ChatConversationViewModel {
       s.replacingOccurrences(of: "\"", with: "\\\"")
          .replacingOccurrences(of: "\n", with: "\\n")
    }
-}
-
-// MARK: - ToolUseAccumulator
-
-/// Tracks partial JSON chunks for an in-progress tool use block
-struct ToolUseAccumulator {
-   let toolUseId: String
-   let toolName: String
-   var partialJson: String
-   
-   init(toolUseId: String, toolName: String) {
-      self.toolUseId = toolUseId
-      self.toolName = toolName
-      self.partialJson = ""
-   }
-}
-
-// MARK: - PendingToolUse
-
-/// Represents a tool use that has been processed but waiting for user approval
-struct PendingToolUse {
-   let toolUseId: String
-   let toolName: String
-   let resultText: String
-   let isError: Bool
 }

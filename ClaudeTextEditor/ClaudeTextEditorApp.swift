@@ -11,10 +11,10 @@ import SwiftUI
 @main
 struct ClaudeTextEditorApp: App {
    
-   @State private var viewModel = ChatConversationViewModel(
+   @State private var viewModel = ChatConversationMCPViewModel(
       service: {
          AnthropicServiceFactory.service(
-            apiKey: "",
+            apiKey: "YOUR_API_KEY",
             betaHeaders: nil,
             debugEnabled: true)
       }()

@@ -10,11 +10,11 @@ import SwiftUI
 
 struct ChatScreen: View {
    
-   init(viewModel: ChatConversationViewModel) {
+   init(viewModel: ChatConversationMCPViewModel) {
       self.viewModel = viewModel
    }
    
-   private let viewModel: ChatConversationViewModel
+   private let viewModel: ChatConversationMCPViewModel
    @State private var userInput: String = ""
    
    var body: some View {
