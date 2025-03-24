@@ -6,7 +6,7 @@
 //
 
 import MCPClient
-import SwiftAnthropic
+import MCPSwiftWrapper
 import SwiftUI
 
 @MainActor
@@ -44,6 +44,12 @@ class ChatConversationMCPViewModel {
    /// For any in-progress tool_use block, we store partial JSON here
    private var toolUseAccumulators: [Int: ToolUseAccumulator] = [:]
    
+   /// Current streaming task that can be cancelled
+   private var currentStreamTask: Task<Void, Never>?
+   
+   /// Current tool execution task that can be cancelled
+   private var currentToolTask: Task<Void, Never>?
+   
    // MARK: Initialization
    
    init(service: AnthropicService) {
@@ -67,6 +73,22 @@ class ChatConversationMCPViewModel {
       
       // 2) Make the API call
       callClaude()
+   }
+   
+   /// Cancel the current streaming response
+   func cancelStream() {
+      currentStreamTask?.cancel()
+      currentStreamTask = nil
+      isStreaming = false
+   }
+   
+   /// Cancel the current tool execution
+   func cancelToolExecution() {
+      currentToolTask?.cancel()
+      currentToolTask = nil
+      // Reset UI state
+      waitingForToolResultApproval = false
+      pendingToolUse = nil
    }
    
    /// After a tool is used, user can approve continuing the conversation
@@ -94,12 +116,12 @@ class ChatConversationMCPViewModel {
    // MARK: Private Methods
    
    /// Convert our entire conversation to format for Claude
-   private func conversationToParameterMessages() -> [MessageParameter.Message] {
-      var paramMessages: [MessageParameter.Message] = []
+   private func conversationToParameterMessages() -> [AnthropicMessage] {
+      var paramMessages: [AnthropicMessage] = []
       
       // Convert each local message to Claude's format
       for msg in messages {
-         let role: MessageParameter.Message.Role
+         let role: AnthropicMessage.Role
          switch msg.role {
          case .user:
             role = .user
@@ -118,14 +140,22 @@ class ChatConversationMCPViewModel {
    
    /// Call Claude's streaming API with our full conversation
    private func callClaude() {
+      // Cancel any existing task first
+      cancelStream()
       
-      Task {
-         
+      currentStreamTask = Task {
          // 1) Build parameter with entire chat + tools from MCPClient
          let paramMessages = conversationToParameterMessages()
          
          // Get tools from MCPClient, fall back to empty array if not available
-         let tools = try await mcpClient?.anthropicTools() ?? []
+         let tools: [AnthropicTool]
+         do {
+            tools = try await mcpClient?.anthropicTools() ?? []
+         } catch {
+            errorMessage = "Error fetching tools: \(error.localizedDescription)"
+            isStreaming = false
+            return
+         }
          
          let param = MessageParameter(
             model: .claude37Sonnet,
@@ -136,7 +166,6 @@ class ChatConversationMCPViewModel {
          )
          
          // 2) Start streaming
-         
          do {
             isStreaming = true
             errorMessage = ""
@@ -149,13 +178,24 @@ class ChatConversationMCPViewModel {
             let stream = try await service.streamMessage(param)
             
             for try await event in stream {
+               // Check if task was cancelled
+               if Task.isCancelled {
+                  // Update message to indicate cancellation if needed
+                  messages[assistantIndex].content += "\n[Response cancelled by user]"
+                  break
+               }
+               
                handleStreamEvent(event, assistantIndex: assistantIndex)
             }
             
             isStreaming = false
          } catch {
             isStreaming = false
-            errorMessage = "Error: \(error.localizedDescription)"
+            if error is CancellationError {
+               // Handle cancellation specifically if needed
+            } else {
+               errorMessage = "Error: \(error.localizedDescription)"
+            }
          }
       }
    }
@@ -248,13 +288,16 @@ class ChatConversationMCPViewModel {
       toolName: String,
       inputDict: [String: MessageResponse.Content.DynamicContent]
    ) {
-      // 1) Add a message showing the tool use details to our chat
-      let debugInfo = formatToolInputForDisplay(toolName: toolName, input: inputDict)
-      let toolUseMsg = ChatMessage(role: .toolUse, content: debugInfo)
-      messages.append(toolUseMsg)
-      
-      // 2) Call the tool via MCPClient
-      Task {
+      // Create a new task for tool execution that can be cancelled
+      currentToolTask = Task {
+         // 1) Add a message showing the tool use details to our chat
+         let debugInfo = formatToolInputForDisplay(toolName: toolName, input: inputDict)
+         let toolUseMsg = ChatMessage(role: .toolUse, content: debugInfo)
+         messages.append(toolUseMsg)
+         
+         // 2) Call the tool via MCPClient
+         if Task.isCancelled { return }
+         
          if let mcpClient = mcpClient {
             // Convert our dictionary to the format expected by MCPClient
             let toolResponse = await mcpClient.anthropicCallTool(
@@ -263,8 +306,10 @@ class ChatConversationMCPViewModel {
                debug: true
             )
             
+            if Task.isCancelled { return }
+            
             // 3) Add a tool result message in the UI
-            let resultText = toolResponse ?? "Tool execution failed"
+            let resultText = toolResponse ?? "Tool execution cancelled by user"
             let isError = toolResponse == nil
             let resultMsg = ChatMessage(role: .toolResult, content: resultText)
             messages.append(resultMsg)
@@ -279,7 +324,11 @@ class ChatConversationMCPViewModel {
             waitingForToolResultApproval = true
          } else {
             // Fallback to the old method if MCPClient is not available
+            if Task.isCancelled { return }
+            
             let (resultText, isError) = textEditorHandler.processToolUse(input: inputDict)
+            
+            if Task.isCancelled { return }
             
             let resultMsg = ChatMessage(role: .toolResult, content: resultText)
             messages.append(resultMsg)
@@ -390,6 +439,7 @@ class ChatConversationMCPViewModel {
                output += "Text to Insert: \"\(newStr)\"\n"
             }
          default:
+            print("zizou \(command)")
             break
          }
       }
