@@ -65,8 +65,10 @@ struct ChatScreen: View {
                   }
                   .keyboardShortcut(.defaultAction)
                   
-                  // In a real app, you could have editing options here
-                  // Button("Edit result") { /* Open an editor */ }
+                  Button("Cancel") {
+                     viewModel.cancelToolExecution()
+                  }
+                  .keyboardShortcut(.cancelAction)
                }
                .padding(.top, 4)
             }
@@ -85,18 +87,25 @@ struct ChatScreen: View {
                   return .handled
                }
             
+            // Updated button that toggles between send and stop
             Button(action: {
-               sendUserMessage()
+               if viewModel.isStreaming {
+                  viewModel.cancelStream()
+               } else {
+                  sendUserMessage()
+               }
             }) {
-               Image(systemName: "paperplane.fill")
-                  .foregroundColor(.accentColor)
+               Image(systemName: viewModel.isStreaming ? "stop.fill" : "paperplane.fill")
+                  .foregroundColor(viewModel.isStreaming ? .red : .accentColor)
             }
             .disabled(
-               userInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
-               viewModel.isStreaming ||
+               (!viewModel.isStreaming &&
+                userInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) ||
                viewModel.waitingForToolResultApproval
             )
             .keyboardShortcut(.return, modifiers: [.command])
+            .help(viewModel.isStreaming ? "Stop generation" : "Send message")
+            .animation(.easeInOut, value: viewModel.isStreaming)
          }
          .padding()
          
@@ -119,4 +128,3 @@ struct ChatScreen: View {
       userInput = ""
    }
 }
-
