@@ -25,7 +25,7 @@ struct ClaudeTextEditorApp: App {
             AnthropicServiceFactory.service(
                apiKey: "",
                betaHeaders: nil,
-               debugEnabled: true)
+               debugEnabled: false)
          }()
       ))
       

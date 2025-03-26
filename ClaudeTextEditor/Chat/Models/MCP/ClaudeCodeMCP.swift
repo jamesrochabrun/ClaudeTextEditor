@@ -19,6 +19,11 @@ final class ClaudeCodeMCP {
                info: .init(name: "ClaudeCode", version: "1.0.0"),
                transport: .stdioProcess(
                   "claude",
+                  //"npx",
+//                  args: [
+//                     "-y",
+//                        "@wonderwhy-er/desktop-commander", // Good tool for coding
+//                  ],
                   args: ["mcp", "serve"],
                   cwd: rootDirectory,  // Set the current working directory for Claude Code
                   verbose: true),

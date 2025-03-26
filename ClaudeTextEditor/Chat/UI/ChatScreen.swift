@@ -23,9 +23,17 @@ struct ChatScreen: View {
          ScrollViewReader { scrollProxy in
             ScrollView {
                LazyVStack(alignment: .leading, spacing: 12) {
-                  ForEach(viewModel.messages) { msg in
-                     MessageBubbleView(msg: msg)
-                        .id(msg.id)
+                  ForEach(Array(viewModel.messages.enumerated()), id: \.element.id) { index, msg in
+                     MessageBubbleView(
+                        msg: msg,
+                        isLoading: viewModel.isStreaming || 
+                        // For tool use messages, show loading when we're waiting for approval
+                        (msg.role == .toolUse && viewModel.waitingForToolResultApproval) ||
+                        // For the last message in any context, show loading during tool execution
+                        (index == viewModel.messages.count - 1 && viewModel.waitingForToolResultApproval),
+                        isLastMessage: index == viewModel.messages.count - 1
+                     )
+                     .id(msg.id)
                   }
                }
                .padding()

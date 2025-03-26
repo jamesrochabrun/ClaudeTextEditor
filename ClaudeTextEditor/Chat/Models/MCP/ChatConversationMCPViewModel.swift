@@ -150,9 +150,20 @@ class ChatConversationMCPViewModel {
          // Get tools from MCPClient, fall back to empty array if not available
          let tools: [AnthropicTool]
          do {
-            tools = try await mcpClient?.anthropicTools() ?? []
+            let fetchedTools = try await mcpClient?.anthropicTools() ?? []
+            tools = fetchedTools
+            print("DEBUG: Successfully fetched \(fetchedTools.count) tools")
+            for (i, tool) in fetchedTools.enumerated() {
+               switch tool {
+               case .function(let name, let description, _, _):
+                  print("DEBUG: Function Tool \(i): name='\(name)', description='\(description?.prefix(30) ?? "none")'")
+               case .hosted(let type, let name):
+                  print("DEBUG: Hosted Tool \(i): name='\(name)', type='\(type)'")
+               }
+            }
          } catch {
             errorMessage = "Error fetching tools: \(error.localizedDescription)"
+            print("DEBUG ERROR: Failed to fetch tools: \(error.localizedDescription)")
             isStreaming = false
             return
          }
@@ -164,6 +175,8 @@ class ChatConversationMCPViewModel {
             stream: true,
             tools: tools
          )
+         
+         print("DEBUG: Creating chat request with \(paramMessages.count) messages and \(tools.count) tools")
          
          // 2) Start streaming
          do {
@@ -218,6 +231,7 @@ class ChatConversationMCPViewModel {
             // Claude is calling a tool - create an accumulator for partial JSON
             let toolId = contentBlock.id ?? "unknown_tool_id"
             let toolName = contentBlock.name ?? "unknown_tool_name"
+            print("DEBUG: Tool use start detected - toolId: \(toolId), toolName: \(toolName), index: \(index)")
             toolUseAccumulators[index] = ToolUseAccumulator(toolUseId: toolId, toolName: toolName)
          }
          
@@ -234,9 +248,15 @@ class ChatConversationMCPViewModel {
          else if ["input_json_delta", "tool_use_delta", "partial_json"].contains(delta.type),
                  let partialJson = delta.partialJson {
             // Accumulate the JSON fragments
+            print("DEBUG: Received partial JSON for index \(index): \(partialJson)")
             if toolUseAccumulators[index] != nil {
                toolUseAccumulators[index]!.partialJson += partialJson
+               print("DEBUG: Accumulated JSON so far: \(toolUseAccumulators[index]!.partialJson)")
+            } else {
+               print("DEBUG ERROR: No accumulator found for index \(index)")
             }
+         } else if ["input_json_delta", "tool_use_delta", "partial_json"].contains(delta.type) {
+            print("DEBUG ERROR: Delta type for tool but partialJson was nil, delta type: \(String(describing: delta.type))")
          }
          
       case .contentBlockStop:
@@ -245,7 +265,16 @@ class ChatConversationMCPViewModel {
          
          // Handle tool_use blocks that have completed
          if let accumulator = toolUseAccumulators[index] {
-            let finalJsonString = accumulator.partialJson
+            var finalJsonString = accumulator.partialJson
+            print("DEBUG: Tool use block completed for index \(index)")
+            print("DEBUG: Final JSON string: \(finalJsonString)")
+            
+            if finalJsonString.isEmpty {
+               print("DEBUG: JSON string is empty for tool \(accumulator.toolName), using default empty object")
+               // Use an empty JSON object for tools that don't require parameters
+               finalJsonString = "{}"
+            }
+            
             toolUseAccumulators.removeValue(forKey: index)
             
             // Parse the accumulated JSON
@@ -288,6 +317,9 @@ class ChatConversationMCPViewModel {
       toolName: String,
       inputDict: [String: MessageResponse.Content.DynamicContent]
    ) {
+      print("DEBUG: Handling tool use - toolId: \(toolUseId), toolName: \(toolName)")
+      print("DEBUG: Input dictionary: \(inputDict)")
+      
       // Create a new task for tool execution that can be cancelled
       currentToolTask = Task {
          // 1) Add a message showing the tool use details to our chat
@@ -300,17 +332,38 @@ class ChatConversationMCPViewModel {
          
          if let mcpClient = mcpClient {
             // Convert our dictionary to the format expected by MCPClient
+            let convertedInput = convertToMCPInput(inputDict)
+            print("DEBUG: Calling MCP tool \(toolName) with input: \(convertedInput)")
+            
             let toolResponse = await mcpClient.anthropicCallTool(
                name: toolName,
-               input: convertToMCPInput(inputDict),
+               input: convertedInput,
                debug: true
             )
             
             if Task.isCancelled { return }
             
             // 3) Add a tool result message in the UI
-            let resultText = toolResponse ?? "Tool execution cancelled by user"
-            let isError = toolResponse == nil
+            let resultText: String
+            let isError: Bool
+            
+            if let response = toolResponse {
+               resultText = response
+               isError = false
+               print("DEBUG: Tool response received - success: true")
+            } else {
+               // When we get nil, this could be due to cancellation OR an error
+               // In either case, we should check if there was an error
+               if Task.isCancelled {
+                  resultText = "Tool execution cancelled by user"
+               } else {
+                  resultText = "Tool execution failed. Please try again or use a different approach."
+               }
+               isError = true
+               print("DEBUG: Tool response received - success: false, cancelled: \(Task.isCancelled)")
+            }
+            
+            print("DEBUG: Tool response content: \(resultText.prefix(100))")
             let resultMsg = ChatMessage(role: .toolResult, content: resultText)
             messages.append(resultMsg)
             
