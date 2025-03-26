@@ -16,6 +16,7 @@ struct ChatScreen: View {
    
    private let viewModel: ChatConversationMCPViewModel
    @State private var userInput: String = ""
+   @FocusState private var textFieldFocused: Bool
    
    var body: some View {
       VStack(spacing: 0) {
@@ -23,9 +24,17 @@ struct ChatScreen: View {
          ScrollViewReader { scrollProxy in
             ScrollView {
                LazyVStack(alignment: .leading, spacing: 12) {
-                  ForEach(viewModel.messages) { msg in
-                     MessageBubbleView(msg: msg)
-                        .id(msg.id)
+                  ForEach(Array(viewModel.messages.enumerated()), id: \.element.id) { index, msg in
+                     MessageBubbleView(
+                        msg: msg,
+                        isLoading: viewModel.isStreaming ||
+                        // For tool use messages, show loading when we're waiting for approval
+                        (msg.role == .toolUse && viewModel.waitingForToolResultApproval) ||
+                        // For the last message in any context, show loading during tool execution
+                        (index == viewModel.messages.count - 1 && viewModel.waitingForToolResultApproval),
+                        isLastMessage: index == viewModel.messages.count - 1
+                     )
+                     .id(msg.id)
                   }
                }
                .padding()
@@ -77,35 +86,85 @@ struct ChatScreen: View {
          }
          
          // User input area
-         HStack {
-            TextField("Type your message...", text: $userInput, axis: .vertical)
-               .textFieldStyle(.roundedBorder)
-               .lineLimit(1...5)
-               .disabled(viewModel.waitingForToolResultApproval)
-               .onKeyPress(.return) {
-                  sendUserMessage()
-                  return .handled
+         VStack(spacing: 0) {
+            // Custom text input area with growing capability
+            HStack(alignment: .bottom) {
+               // Enhanced text field with dynamic height
+               TextEditor(text: $userInput)
+                  .frame(minHeight: 36, maxHeight: 100)
+                  .padding(8)
+                  .background(Color(NSColor.textBackgroundColor))
+                  .cornerRadius(8)
+                  .overlay(
+                     RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                  )
+                  .font(.body)
+                  .disabled(viewModel.waitingForToolResultApproval)
+                  .opacity(viewModel.waitingForToolResultApproval ? 0.6 : 1.0)
+               // Simple configuration for the text editor
+                  .submitLabel(.send)
+                  .focused($textFieldFocused)
+                  .onKeyPress(.return) {
+                     if viewModel.isStreaming {
+                        viewModel.cancelStream()
+                     } else {
+                        sendUserMessage()
+                     }
+                     return .handled
+                  }
+                  .overlay(
+                     // Placeholder text that appears when input is empty
+                     Group {
+                        if userInput.isEmpty {
+                           Text("Type your message...")
+                              .foregroundColor(Color.secondary)
+                              .padding(.leading, 12)
+                              .padding(.top, 10)
+                              .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                        }
+                     }
+                  )
+               
+               // Send/Stop button
+               Button(action: {
+                  if viewModel.isStreaming {
+                     viewModel.cancelStream()
+                  } else {
+                     sendUserMessage()
+                  }
+               }) {
+                  Image(systemName: viewModel.isStreaming ? "stop.fill" : "paperplane.fill")
+                     .font(.system(size: 16, weight: .semibold))
+                     .frame(width: 36, height: 36)
+                     .background(
+                        Circle()
+                           .fill(viewModel.isStreaming ? Color.red.opacity(0.9) : Color.accentColor)
+                     )
+                     .foregroundColor(.white)
                }
-            
-            // Updated button that toggles between send and stop
-            Button(action: {
-               if viewModel.isStreaming {
-                  viewModel.cancelStream()
-               } else {
-                  sendUserMessage()
-               }
-            }) {
-               Image(systemName: viewModel.isStreaming ? "stop.fill" : "paperplane.fill")
-                  .foregroundColor(viewModel.isStreaming ? .red : .accentColor)
+               .buttonStyle(.plain)
+               .disabled(
+                  (!viewModel.isStreaming &&
+                   userInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) ||
+                  viewModel.waitingForToolResultApproval
+               )
+               // Using Return/Enter shortcut to send message
+               // .keyboardShortcut(.return, modifiers: [])
+               .help(viewModel.isStreaming ? "Stop generation" : "Send message")
+               .animation(.easeInOut, value: viewModel.isStreaming)
+               .padding(.bottom, 4)
             }
-            .disabled(
-               (!viewModel.isStreaming &&
-                userInput.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) ||
-               viewModel.waitingForToolResultApproval
-            )
-            .keyboardShortcut(.return, modifiers: [.command])
-            .help(viewModel.isStreaming ? "Stop generation" : "Send message")
-            .animation(.easeInOut, value: viewModel.isStreaming)
+            
+            // Helper text showing keyboard shortcuts
+            HStack {
+               Text("Press ↩︎ to send")
+                  .font(.caption2)
+                  .foregroundColor(.secondary)
+                  .padding(.leading, 8)
+                  .padding(.top, 4)
+               Spacer()
+            }
          }
          .padding()
          
@@ -118,13 +177,24 @@ struct ChatScreen: View {
          }
       }
       .frame(minWidth: 700, minHeight: 500)
+      .onAppear {
+         // Set focus to the text field when the view appears
+         textFieldFocused = true
+      }
    }
    
    private func sendUserMessage() {
       let trimmedInput = userInput.trimmingCharacters(in: .whitespacesAndNewlines)
       guard !trimmedInput.isEmpty else { return }
       
+      // Send message and clear input field
       viewModel.sendUserMessage(trimmedInput)
       userInput = ""
+      
+      // Maintain focus on the text field after sending
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+         textFieldFocused = true
+      }
    }
 }
+
