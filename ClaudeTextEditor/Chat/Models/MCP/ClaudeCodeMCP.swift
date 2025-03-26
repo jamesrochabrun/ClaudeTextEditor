@@ -10,6 +10,12 @@ import MCPSwiftWrapper
 
 final class ClaudeCodeMCP {
    
+   let npx = "npx"
+   let argsToTest = ["-y", "@wonderwhy-er/desktop-commander"]
+   
+   let claude = "claude"
+   let claudeArgs = ["mcp", "serve"]
+   
    /// Initialize with a specific root directory
    /// - Parameter rootDirectory: The directory to use as the current working directory for Claude Code
    init(rootDirectory: String?) {
@@ -18,13 +24,8 @@ final class ClaudeCodeMCP {
             self.client = try await MCPClient(
                info: .init(name: "ClaudeCode", version: "1.0.0"),
                transport: .stdioProcess(
-                  "claude",
-                  //"npx",
-//                  args: [
-//                     "-y",
-//                        "@wonderwhy-er/desktop-commander", // Good tool for coding
-//                  ],
-                  args: ["mcp", "serve"],
+                  claude,
+                  args: claudeArgs,
                   cwd: rootDirectory,  // Set the current working directory for Claude Code
                   verbose: true),
                capabilities: .init())
