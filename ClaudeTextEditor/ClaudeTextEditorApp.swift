@@ -17,7 +17,8 @@ struct ClaudeTextEditorApp: App {
    @Environment(\.settingsManager) var settingsManager
    
    private var claudeMCPclient: ClaudeCodeMCP
-   
+  // private var claudeMCPclientInterceptor: ClaudeCodeMCPInterceptor
+
    init() {      
       // Initialize view model with settings
       _viewModel = State(initialValue: ChatConversationMCPViewModel(
@@ -31,6 +32,10 @@ struct ClaudeTextEditorApp: App {
       
       // Initialize MCP client
       self.claudeMCPclient = ClaudeCodeMCP(rootDirectory: nil)
+      
+      // Interceptor
+      // self.claudeMCPclientInterceptor = ClaudeCodeMCPInterceptor(rootDirectory: nil)
+
    }
    
    var body: some Scene {
@@ -50,6 +55,11 @@ struct ClaudeTextEditorApp: App {
                if let client = try? await claudeMCPclient.getClientAsync() {
                   viewModel.updateClient(client)
                }
+               
+               // Interceptor:
+//               if let client = try? await claudeMCPclientInterceptor.getClientAsync() {
+//                  viewModel.updateClient(client)
+//               }
             }
             .onChange(of: settingsManager.apiKey, initial: true) {
                updateServiceWithNewApiKey()
@@ -99,6 +109,9 @@ struct ClaudeTextEditorApp: App {
       Task {
          // Create a new client with the updated root directory
          let newClient = ClaudeCodeMCP(rootDirectory: settingsManager.rootDirectoryPath)
+         
+         // Interceptor:
+         // let newClient = ClaudeCodeMCPInterceptor(rootDirectory: settingsManager.rootDirectoryPath)
          
          // Get and update the client in the view model
          if let client = try? await newClient.getClientAsync() {
